@@ -91,7 +91,7 @@ jobs:
             -e "s|@PROJECT_BINARY_DIR@|.|g" \
             -e "s|@PROJECT_SOURCE_DIR@|$GDAL_DIR|g" \
             -e "s|@GDAL_LIB_DIR@|'$GDAL_LIB'|g" \
-            -e "s|@GDAL_LIB_OUTPUT_NAME@|'gdal'|g" \
+            -e "s|@GDAL_LIB_OUTPUT_NAME@|gdal|g" \
             -e "s|@GNM_ENABLED@|0|g" \
             -e "s|@CMAKE_OSX_SYSROOT@||g" \
             setup.py
