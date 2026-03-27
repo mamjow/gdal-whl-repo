@@ -7,26 +7,24 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Install dependencies
+      - name: Install system dependencies
         run: |
           sudo apt update
           sudo apt install -y \
-          build-essential cmake \
-          libtiff-dev libgeotiff-dev \
-          libjpeg-dev libpng-dev \
-          libsqlite3-dev libcurl4-openssl-dev \
-          libproj-dev proj-data proj-bin \
-          libexpat1-dev libxerces-c-dev
+            build-essential cmake \
+            libtiff-dev libgeotiff-dev \
+            libjpeg-dev libpng-dev \
+            libsqlite3-dev libcurl4-openssl-dev \
+            libproj-dev proj-data proj-bin \
+            libexpat1-dev libxerces-c-dev \
+            wget
 
-      - name: Download and extract GDAL
+      - name: Download and build GDAL
         run: |
           wget https://download.osgeo.org/gdal/3.11.4/gdal-3.11.4.tar.gz
           tar -xvf gdal-3.11.4.tar.gz
           cd gdal-3.11.4
-
-      - name: Run a one-line script
-        run: |
-          mkdir build && cd build
+          mkdir -p build && cd build
           cmake ..
           make -j$(nproc)
           sudo make install
@@ -42,8 +40,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install wheel setuptools numpy
 
-      - name: Build wheel
+      - name: Build GDAL Python wheel
         run: |
+          cd gdal-3.11.4/swig/python
           python setup.py bdist_wheel
         env:
           CPLUS_INCLUDE_PATH: /usr/local/include
@@ -54,4 +53,4 @@ jobs:
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/*.whl
+          files: gdal-3.11.4/swig/python/dist/*.whl
