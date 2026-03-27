@@ -1,29 +1,37 @@
-name: CI
+name: GDAL Build & Release
 
 on:
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Tag for GitHub release"
+        required: true
+      gdal_url:
+        description: "URL of GDAL source tarball"
+        required: true
+        default: "https://download.osgeo.org/gdal/3.11.4/gdal-3.11.4.tar.gz"
 
 jobs:
-  build:
+  build-and-release:
     runs-on: ubuntu-latest
     steps:
       - name: Install system dependencies
         run: |
           sudo apt update
           sudo apt install -y \
-            build-essential cmake \
+            build-essential cmake wget \
             libtiff-dev libgeotiff-dev \
             libjpeg-dev libpng-dev \
             libsqlite3-dev libcurl4-openssl-dev \
             libproj-dev proj-data proj-bin \
-            libexpat1-dev libxerces-c-dev \
-            wget
+            libexpat1-dev libxerces-c-dev
 
       - name: Download and build GDAL
         run: |
-          wget https://download.osgeo.org/gdal/3.11.4/gdal-3.11.4.tar.gz
-          tar -xvf gdal-3.11.4.tar.gz
-          cd gdal-3.11.4
+          wget ${{ github.event.inputs.gdal_url }} -O gdal.tar.gz
+          tar -xvf gdal.tar.gz
+          GDAL_DIR=$(tar -tf gdal.tar.gz | head -1 | cut -f1 -d"/")
+          cd $GDAL_DIR
           mkdir -p build && cd build
           cmake ..
           make -j$(nproc)
@@ -42,15 +50,17 @@ jobs:
 
       - name: Build GDAL Python wheel
         run: |
-          cd gdal-3.11.4/swig/python
+          cd $GDAL_DIR/swig/python
           python setup.py bdist_wheel
         env:
           CPLUS_INCLUDE_PATH: /usr/local/include
           C_INCLUDE_PATH: /usr/local/include
           LD_LIBRARY_PATH: /usr/local/lib
 
-      - name: Create Release
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: gdal-3.11.4/swig/python/dist/*.whl
+          tag_name: ${{ github.event.inputs.release_tag }}
+          files: $GDAL_DIR/swig/python/dist/*.whl
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
