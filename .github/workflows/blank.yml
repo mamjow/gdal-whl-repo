@@ -85,7 +85,7 @@ jobs:
           # Try replacing common GDAL version placeholders
           sed -i "s/@GDAL_VERSION@/$VERSION/g" setup.py || true
           sed -i "s/@VERSION@/$VERSION/g" setup.py || true
-          sed -i "s|@GDAL_LIB_DIR@|$GDAL_LIB|" setup.py
+          sed -i "s|@GDAL_LIB_DIR@|\"$GDAL_LIB\"|" setup.py
           # Build compiled wheel (THIS is the key fix)
           python setup.py bdist_wheel
 
