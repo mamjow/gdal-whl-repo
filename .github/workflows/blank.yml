@@ -80,11 +80,12 @@ jobs:
           # Inject version
           VERSION="${{ github.event.inputs.release_tag }}"
           VERSION="${VERSION#v}"
-
+          # find gdal library path using ldconfig
+          GDAL_LIB=$(ldconfig -p | grep libgdal.so | head -1 | awk '{print $4}' | xargs dirname)
           # Try replacing common GDAL version placeholders
           sed -i "s/@GDAL_VERSION@/$VERSION/g" setup.py || true
           sed -i "s/@VERSION@/$VERSION/g" setup.py || true
-
+          sed -i "s|@GDAL_LIB_DIR@|$GDAL_LIB|" setup.py
           # Build compiled wheel (THIS is the key fix)
           python setup.py bdist_wheel
 
