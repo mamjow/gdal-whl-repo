@@ -57,36 +57,8 @@ jobs:
           VERSION="${{ github.event.inputs.release_tag }}"
           cat <<EOF > pyproject.toml
           [build-system]
-          requires = ["setuptools>=61", "wheel", "numpy"]
+          requires = ["setuptools<61", "wheel", "numpy"]
           build-backend = "setuptools.build_meta"
-      
-          [project]
-          name = "gdal"
-          version = "$VERSION"
-          readme = "README.md"
-      
-          [project.scripts]
-          rgb2pct = "osgeo_utils.rgb2pct:main"
-          pct2rgb = "osgeo_utils.pct2rgb:main"
-          ogrmerge = "osgeo_utils.ogrmerge:main"
-          ogr_layer_algebra = "osgeo_utils.ogr_layer_algebra:main"
-          gdalmove = "osgeo_utils.gdalmove:main"
-          gdalcompare = "osgeo_utils.gdalcompare:main"
-          gdalattachpct = "osgeo_utils.gdalattachpct:main"
-          gdal_sieve = "osgeo_utils.gdal_sieve:main"
-          gdal_retile = "osgeo_utils.gdal_retile:main"
-          gdal_proximity = "osgeo_utils.gdal_proximity:main"
-          gdal_polygonize = "osgeo_utils.gdal_polygonize:main"
-          gdal_pansharpen = "osgeo_utils.gdal_pansharpen:main"
-          gdal_merge = "osgeo_utils.gdal_merge:main"
-          gdal_fillnodata = "osgeo_utils.gdal_fillnodata:main"
-          gdal_edit = "osgeo_utils.gdal_edit:main"
-          gdal_calc = "osgeo_utils.gdal_calc:main"
-          gdal2xyz = "osgeo_utils.gdal2xyz:main"
-          gdal2tiles = "osgeo_utils.gdal2tiles:main"
-      
-          [project.optional-dependencies]
-          numpy = ["numpy>1.0.0"]
           EOF
           cat pyproject.toml  # debug
 
