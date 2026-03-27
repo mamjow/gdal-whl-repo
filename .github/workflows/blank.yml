@@ -69,8 +69,26 @@ jobs:
       - name: Build GDAL Python wheel
         run: |
           cd $GDAL_DIR/swig/python
+
+          python -m pip install --upgrade pip setuptools wheel numpy
+
           export NUMPY_INCLUDEDIR=$(python -c "import numpy; print(numpy.get_include())")
-          python -m build --wheel
+
+          # Generate setup.py from template
+          cp setup.py.in setup.py
+
+          # Inject version
+          VERSION="${{ github.event.inputs.release_tag }}"
+          VERSION="${VERSION#v}"
+
+          # Try replacing common GDAL version placeholders
+          sed -i "s/@GDAL_VERSION@/$VERSION/g" setup.py || true
+          sed -i "s/@VERSION@/$VERSION/g" setup.py || true
+
+          # Build compiled wheel (THIS is the key fix)
+          python setup.py bdist_wheel
+
+          ls -lah dist
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
