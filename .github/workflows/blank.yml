@@ -84,24 +84,17 @@ jobs:
 
           # Detect GDAL library and include paths
           GDAL_LIB=$(ldconfig -p | grep libgdal.so | head -1 | awk '{print $4}' | xargs dirname)
-          GDAL_INCLUDE="/usr/include"  # adjust if headers are elsewhere
-
-          # Flags for optional GDAL features (adjust as needed)
-          GNM_ENABLED=True
-          OGR_ENABLED=True
-          GEOS_ENABLED=True
-          PROJ_ENABLED=True
 
           # Replace placeholders safely
-          sed -i "s|@GDAL_VERSION@|$VERSION|g" setup.py || true
-          sed -i "s|@VERSION@|$VERSION|g" setup.py || true
-          sed -i "s|@GDAL_LIB_DIR@|\"$GDAL_LIB\"|g" setup.py
-          sed -i "s|@GDAL_INCLUDE_DIR@|\"$GDAL_INCLUDE\"|g" setup.py
-          sed -i "s|@NUMPY_INCLUDEDIR@|\"$NUMPY_INCLUDEDIR\"|g" setup.py
-          sed -i "s|@GNM_ENABLED@|$GNM_ENABLED|g" setup.py
-          sed -i "s|@OGR_ENABLED@|$OGR_ENABLED|g" setup.py
-          sed -i "s|@GEOS_ENABLED@|$GEOS_ENABLED|g" setup.py
-          sed -i "s|@PROJ_ENABLED@|$PROJ_ENABLED|g" setup.py
+          sed -i \
+            -e "s|@GDAL_PYTHON_VERSION@|$VERSION|g" \
+            -e "s|@PROJECT_BINARY_DIR@|.|g" \
+            -e "s|@PROJECT_SOURCE_DIR@|$GDAL_DIR|g" \
+            -e "s|@GDAL_LIB_DIR@|'$GDAL_LIB'|g" \
+            -e "s|@GDAL_LIB_OUTPUT_NAME@|'gdal'|g" \
+            -e "s|@GNM_ENABLED@|0|g" \
+            -e "s|@CMAKE_OSX_SYSROOT@||g" \
+            setup.py
 
           # Build compiled wheel
           python setup.py bdist_wheel
