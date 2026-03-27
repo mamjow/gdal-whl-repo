@@ -1,3 +1,5 @@
+permissions:
+  contents: write
 name: GDAL Build & Release
 
 on:
@@ -49,6 +51,21 @@ jobs:
           sudo make install
           sudo ldconfig
 
+      - name: Inject version into build
+        run: |
+          cd $GDAL_DIR/swig/python
+          VERSION="${{ github.event.inputs.release_tag }}"
+          cat <<EOF > pyproject.toml
+          [build-system]
+          requires = ["setuptools>=61", "wheel", "numpy"]
+          build-backend = "setuptools.build_meta"
+
+          [project]
+          name = "gdal"
+          version = "$VERSION"
+          EOF
+          cat pyproject.toml  # debug
+
       - name: Build GDAL Python wheel
         run: |
           cd $GDAL_DIR/swig/python
@@ -59,6 +76,6 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event.inputs.release_tag }}
-          files: $GDAL_DIR/swig/python/dist/*.whl
+          files: ${{ env.GDAL_DIR }}/swig/python/dist/*.whl
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
