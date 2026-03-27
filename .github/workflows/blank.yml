@@ -52,9 +52,8 @@ jobs:
       - name: Build GDAL Python wheel
         run: |
           cd $GDAL_DIR/swig/python
+          export NUMPY_INCLUDEDIR=$(python -c "import numpy; print(numpy.get_include())")
           python -m build --wheel
-        env:
-          NUMPY_INCLUDEDIR: $(python -c "import numpy; print(numpy.get_include())")
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
