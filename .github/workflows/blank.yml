@@ -44,7 +44,7 @@ jobs:
           cd $GDAL_DIR
           echo "GDAL_DIR=$GDAL_DIR" >> $GITHUB_ENV
           mkdir -p build && cd build
-          cmake ..
+          cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr -DBUILD_PYTHON_BINDINGS=ON
           make -j$(nproc)
           sudo make install
           sudo ldconfig
@@ -52,11 +52,8 @@ jobs:
       - name: Build GDAL Python wheel
         run: |
           cd $GDAL_DIR/swig/python
-          python setup.py bdist_wheel
+          python -m build --wheel
         env:
-          CPLUS_INCLUDE_PATH: /usr/local/include
-          C_INCLUDE_PATH: /usr/local/include
-          LD_LIBRARY_PATH: /usr/local/lib
           NUMPY_INCLUDEDIR: $(python -c "import numpy; print(numpy.get_include())")
 
       - name: Create GitHub Release
