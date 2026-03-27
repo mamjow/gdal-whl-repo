@@ -1,76 +1,68 @@
-name: Build GDAL Wheel
+name: GDAL Build & Release
 
 on:
   workflow_dispatch:
     inputs:
-      source_url:
-        description: "URL to GDAL source tarball"
+      release_tag:
+        description: "Tag for GitHub release"
+        required: true
+      gdal_url:
+        description: "URL of GDAL source tarball"
         required: true
         default: "https://download.osgeo.org/gdal/3.11.4/gdal-3.11.4.tar.gz"
 
 jobs:
-  build:
+  build-and-release:
     runs-on: ubuntu-latest
-
     steps:
       - name: Install system dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            build-essential \
-            python3-dev \
-            python3-pip \
-            python3-venv \
-            wget \
-            libproj-dev \
-            proj-data \
-            proj-bin \
-            libgeos-dev \
-            libtiff-dev \
-            libjpeg-dev \
-            libpng-dev \
-            libsqlite3-dev \
-            libcurl4-openssl-dev \
-            swig \
-            git
+          sudo apt update
+          sudo apt install -y \
+            build-essential cmake wget \
+            libtiff-dev libgeotiff-dev \
+            libjpeg-dev libpng-dev \
+            libsqlite3-dev libcurl4-openssl-dev \
+            libproj-dev proj-data proj-bin \
+            libexpat1-dev libxerces-c-dev
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.10"
 
-      - name: Upgrade pip and install build tools
-        run: python -m pip install --upgrade pip setuptools wheel build
-
-      - name: Download GDAL source
+      - name: Install Python build dependencies
         run: |
-          wget "${{ github.event.inputs.source_url }}" -O gdal.tar.gz
-          mkdir src
-          tar -xf gdal.tar.gz -C src --strip-components=1
+          python -m pip install --upgrade pip
+          pip install wheel setuptools numpy
 
-      - name: Build GDAL library
+      - name: Download and build GDAL
         run: |
-          cd src
-          ./configure --prefix=/usr
+          wget ${{ github.event.inputs.gdal_url }} -O gdal.tar.gz
+          tar -xvf gdal.tar.gz
+          GDAL_DIR=$(tar -tf gdal.tar.gz | head -1 | cut -f1 -d"/")
+          cd $GDAL_DIR
+          echo "GDAL_DIR=$GDAL_DIR" >> $GITHUB_ENV
+          mkdir -p build && cd build
+          cmake ..
           make -j$(nproc)
           sudo make install
+          sudo ldconfig
 
-      - name: Build Python wheel
+      - name: Build GDAL Python wheel
         run: |
-          cd src/swig/python
-          python -m build --wheel
+          cd $GDAL_DIR/swig/python
+          python setup.py bdist_wheel
+        env:
+          CPLUS_INCLUDE_PATH: /usr/local/include
+          C_INCLUDE_PATH: /usr/local/include
+          LD_LIBRARY_PATH: /usr/local/lib
+          NUMPY_INCLUDEDIR: $(python -c "import numpy; print(numpy.get_include())")
 
-      - name: Upload wheel as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: gdal-wheel
-          path: src/swig/python/dist/*.whl
-
-      - name: Create GitHub release with wheel
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: "build-${{ github.run_number }}"
-          name: "GDAL Wheel Build #${{ github.run_number }}"
-          files: src/swig/python/dist/*.whl
+          tag_name: ${{ github.event.inputs.release_tag }}
+          files: $GDAL_DIR/swig/python/dist/*.whl
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
